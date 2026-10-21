@@ -1,10 +1,12 @@
 const express = require("express");
 const cors = require("cors");
+const PORT = process.env.PORT || 8080
 
 const app = express();
 
 app.use(express.json());
 app.use(cors());
+
 
 
 let requests = [
@@ -35,10 +37,24 @@ let requests = [
 
 ];
 
+let residents = [
+{
+  id: "1001",
+  number: "50"
+
+} 
+];
+
 
 app.get("/api/requests", (req, res) => {
 
   res.json(requests);
+
+});
+
+app.get("/api/residents", (req, res) => {
+
+  res.json(residents);
 
 });
 
