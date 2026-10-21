@@ -1,0 +1,19 @@
+{
+  "name": "Barangay Online Service System",
+  "short_name": "Barangay OS",
+  "description": "Barangay Online Service System",
+  "start_url": "/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d6efd",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./brgylogo512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
