@@ -55,7 +55,7 @@ export default function ManagerequestadminPage() {
     JSON.stringify(selectedRequest)
   );
 
-  navigate("/request-detail-admin");
+  onViewRequest();
 };
 
   // Search and filter requests.
