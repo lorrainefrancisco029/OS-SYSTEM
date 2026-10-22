@@ -88,7 +88,7 @@ export default function RequestservicePage({ onBack, onSubmitted }) {
     event.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:8080/api/requests", {
+      const response = await fetch("https://os-system-ubjr.onrender.com/api/requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

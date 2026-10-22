@@ -14,7 +14,7 @@ export default function ServiceformPage() {
   const [appointmentDate, setAppointmentDate] = useState("");
   const [appointmentTime, setAppointmentTime] = useState("");
 
-  const api_url = "http://localhost:8080/api/requests";
+  const api_url = "https://os-system-ubjr.onrender.com/api/requests";
 
   async function formSubmit(e) {
     e.preventDefault();
