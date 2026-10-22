@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
-export default function ManagerequestadminPage() {
+export default function ManagerequestadminPage({ onViewRequest }) {
   const navigate = useNavigate();
 
   const [requests, setRequests] = useState([]);
@@ -259,13 +259,13 @@ export default function ManagerequestadminPage() {
                       </td>
 
                       <td>
-                        <button
-                      type="button"
-                        className="btn btn-primary"
-                        onClick={() => openRequestDetails(request)}
-                          >
-                          View Details
-                          </button>
+                       <button
+                          type="button"
+                           className="btn btn-outline-success me-2"
+                            onClick={() => openRequestDetails(request)}
+                              >
+                            View Details
+                            </button>
 
                         <button
                           type="button"
