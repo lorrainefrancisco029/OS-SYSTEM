@@ -14,7 +14,7 @@ export default function ManagerequestadminPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/requests")
+    fetch("https://os-system-ubjr.onrender.com/api/requests")
       .then((response) => response.json())
       .then((data) => {
         setRequests(data);
@@ -50,7 +50,7 @@ export default function ManagerequestadminPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/requests/${editRequestId}`,
+       `https://os-system-ubjr.onrender.com/api/requests/${editRequestId}`,
         {
           method: "PUT",
           headers: {
@@ -94,7 +94,7 @@ export default function ManagerequestadminPage() {
 
     try {
       const response = await fetch(
-        `http://localhost:8080/api/requests/${requestId}`,
+        `https://os-system-ubjr.onrender.com/api/requests/${requestId}`,
         {
           method: "DELETE"
         }
