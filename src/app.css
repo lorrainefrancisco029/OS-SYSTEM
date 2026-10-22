@@ -170,17 +170,15 @@ img { max-width: 100%; }
 
 
 
+        
         .service-card {
             border: 1px solid green;
-
             height: 100%;
-
             padding: 25px;
-
             text-align: center;
-
-            background: lightyellow;
+            background: #F5F0E6;
         }
+
 
         .service-icon {
             width: 55px;

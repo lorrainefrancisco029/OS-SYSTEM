@@ -332,7 +332,7 @@ export default function IndexPage() {
     </div>
     {/* COPYRIGHT */}
     <div className="footer-bottom py-3 text-center">
-      <small>Â© 2026 Barangay OS. All rights reserved.</small>
+      <small>© 2026 Barangay OS. All rights reserved.</small>
     </div>
   </footer>
     </>
