@@ -4,23 +4,7 @@ export default function IndexPage() {
 
   return (
     <>
-  <div className="top-bar py-2">
-    <div className="container-fluid px-4">
-      <div className="d-flex justify-content-between align-items-center">
-        <div>Barangay Online Service System</div>
-        <div className="top-contact d-flex gap-4">
-          <span>
-            <i className="bi bi-telephone-fill me-2"></i>
-            (0977 034 7241)
-          </span>
-          <span>
-            <i className="bi bi-envelope-fill me-2"></i>
-            info@barangay.gov.ph
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
+ 
   <nav className="navbar navbar-expand-lg main-navbar py-3">
     <div className="container-fluid px-4">
       {/* LOGO */}
