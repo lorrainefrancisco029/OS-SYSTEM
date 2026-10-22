@@ -34,28 +34,29 @@ export default function ManagerequestadminPage() {
   }, []);
 
   // Open the existing View Requests page.
-  function openRequestDetails(request) {
-    const selectedRequest = {
-      ...request,
-      id: request.requestId ?? request.id,
-      requestId: request.requestId ?? request.id,
-      resident: request.fullName ?? request.resident ?? "",
-      date: request.dateRequested ?? request.date ?? "",
-      purpose: request.purpose ?? "",
-      contactNumber: request.contactNumber ?? "",
-      status: request.status ?? "Pending",
-      remarks: request.remarks ?? "",
-      appointmentDate: request.appointmentDate ?? "",
-      appointmentTime: request.appointmentTime ?? "",
-    };
+  const openRequestDetails = (request) => {
+  const selectedRequest = {
+    ...request,
+    id: request._id || request.id,
+    requestId: request.requestId || request._id || request.id,
+    resident: request.resident || request.fullName || "",
+    date: request.date || request.dateRequested || request.createdAt || "",
+    service: request.service || "",
+    purpose: request.purpose || "",
+    contactNumber: request.contactNumber || "",
+    status: request.status || "Pending",
+    remarks: request.remarks || "",
+    appointmentDate: request.appointmentDate || "",
+    appointmentTime: request.appointmentTime || "",
+  };
 
-    localStorage.setItem(
-      "adminSelectedRequest",
-      JSON.stringify(selectedRequest)
-    );
+  localStorage.setItem(
+    "adminSelectedRequest",
+    JSON.stringify(selectedRequest)
+  );
 
-    navigate("/my-request");
-  }
+  navigate("/request-detail-admin");
+};
 
   // Search and filter requests.
   const filteredRequests = requests.filter((request) => {
@@ -259,14 +260,12 @@ export default function ManagerequestadminPage() {
 
                       <td>
                         <button
-                          type="button"
-                          className="btn btn-sm btn-outline-success me-2"
-                          onClick={() =>
-                            openRequestDetails(request)
-                          }
-                        >
+                      type="button"
+                        className="btn btn-primary"
+                        onClick={() => openRequestDetails(request)}
+                          >
                           View Details
-                        </button>
+                          </button>
 
                         <button
                           type="button"
