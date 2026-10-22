@@ -16,7 +16,7 @@ export default function ManagerequestadminPage() {
   const [editStatus, setEditStatus] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
- 
+  // Load requests from the backend.
   useEffect(() => {
     fetch("https://os-system-ubjr.onrender.com/api/requests")
       .then((response) => {
@@ -33,7 +33,7 @@ export default function ManagerequestadminPage() {
       });
   }, []);
 
-  
+  // Open the existing View Requests page.
   function openRequestDetails(request) {
     const selectedRequest = {
       ...request,
@@ -54,13 +54,16 @@ export default function ManagerequestadminPage() {
       JSON.stringify(selectedRequest)
     );
 
-    navigate("/request-detail-admin");
+    navigate("/view-requests");
   }
 
-  
+  // Search and filter requests.
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
       request.fullName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      request.resident
         ?.toLowerCase()
         .includes(searchTerm.toLowerCase()) ||
       request.service
@@ -79,12 +82,14 @@ export default function ManagerequestadminPage() {
 
   // Open the existing Edit modal.
   function openEditModal(request) {
-    setIsModalOpen(true);
     setEditRequestId(request.requestId ?? request.id);
     setEditService(request.service ?? "");
-    setEditFullName(request.fullName ?? "");
-    setEditDateRequested(request.dateRequested ?? "");
+    setEditFullName(request.fullName ?? request.resident ?? "");
+    setEditDateRequested(
+      request.dateRequested ?? request.date ?? ""
+    );
     setEditStatus(request.status ?? "Pending");
+    setIsModalOpen(true);
   }
 
   // Save edits to the backend.
@@ -137,9 +142,7 @@ export default function ManagerequestadminPage() {
       "Are you sure you want to delete this request?"
     );
 
-    if (!confirmDelete) {
-      return;
-    }
+    if (!confirmDelete) return;
 
     try {
       const response = await fetch(
@@ -236,7 +239,11 @@ export default function ManagerequestadminPage() {
                   return (
                     <tr key={requestId}>
                       <td>{requestId}</td>
-                      <td>{request.fullName ?? request.resident ?? "N/A"}</td>
+                      <td>
+                        {request.fullName ??
+                          request.resident ??
+                          "N/A"}
+                      </td>
                       <td>{request.service ?? "N/A"}</td>
                       <td>
                         {request.dateRequested ??
@@ -251,7 +258,6 @@ export default function ManagerequestadminPage() {
                       </td>
 
                       <td>
-                        {/* NEW: VIEW DETAILS BUTTON */}
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-success me-2"
@@ -262,7 +268,6 @@ export default function ManagerequestadminPage() {
                           View Details
                         </button>
 
-                        {/* EXISTING EDIT BUTTON */}
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-primary me-2"
@@ -271,13 +276,10 @@ export default function ManagerequestadminPage() {
                           Edit
                         </button>
 
-                        {/* EXISTING DELETE BUTTON */}
                         <button
                           type="button"
                           className="btn btn-sm btn-outline-danger"
-                          onClick={() =>
-                            handleDelete(requestId)
-                          }
+                          onClick={() => handleDelete(requestId)}
                         >
                           Delete
                         </button>
@@ -288,10 +290,7 @@ export default function ManagerequestadminPage() {
 
                 {filteredRequests.length === 0 && (
                   <tr>
-                    <td
-                      colSpan="6"
-                      className="text-center py-4"
-                    >
+                    <td colSpan="6" className="text-center py-4">
                       No requests found.
                     </td>
                   </tr>
@@ -308,6 +307,7 @@ export default function ManagerequestadminPage() {
           className="modal show d-block"
           tabIndex="-1"
           role="dialog"
+          style={{ backgroundColor: "rgba(0,0,0,0.4)" }}
         >
           <div
             className="modal-dialog modal-dialog-centered"
@@ -334,7 +334,6 @@ export default function ManagerequestadminPage() {
                     >
                       Request ID
                     </label>
-
                     <input
                       type="text"
                       className="form-control"
@@ -351,7 +350,6 @@ export default function ManagerequestadminPage() {
                     >
                       Resident
                     </label>
-
                     <input
                       type="text"
                       className="form-control"
@@ -371,7 +369,6 @@ export default function ManagerequestadminPage() {
                     >
                       Service
                     </label>
-
                     <input
                       type="text"
                       className="form-control"
@@ -391,7 +388,6 @@ export default function ManagerequestadminPage() {
                     >
                       Date Requested
                     </label>
-
                     <input
                       type="text"
                       className="form-control"
@@ -411,7 +407,6 @@ export default function ManagerequestadminPage() {
                     >
                       Status
                     </label>
-
                     <select
                       className="form-select"
                       id="editStatus"
