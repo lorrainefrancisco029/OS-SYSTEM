@@ -1,6 +1,22 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 
-export default function UserOverview({ onRequestService }) {
+export default function UserOverview({ onRequestService, onViewRequests }) {
+  const [requestStats, setRequestStats] = useState({ total: 0, pending: 0, completed: 0 });
+  useEffect(() => {
+    let cancelled = false;
+    fetch("https://os-system-ubjr.onrender.com/api/requests")
+      .then((response) => { if (!response.ok) throw new Error("Request list unavailable"); return response.json(); })
+      .then((data) => {
+        if (!Array.isArray(data) || cancelled) return;
+        setRequestStats({
+          total: data.length,
+          pending: data.filter((item) => String(item.status || "Pending").toLowerCase() === "pending").length,
+          completed: data.filter((item) => String(item.status || "").toLowerCase() === "completed").length,
+        });
+      }).catch((error) => console.warn("Dashboard counts could not be loaded:", error));
+    return () => { cancelled = true; };
+  }, []);
+  const openServices = (event) => { event.preventDefault(); onRequestService?.(); };
   return (
       <div className="p-4">
        
@@ -25,7 +41,7 @@ export default function UserOverview({ onRequestService }) {
                 <div className="d-flex justify-content-between">
                   <div>
                     <small className="text-secondary">MY REQUESTS</small>
-                    <div className="stat-number text-success">8</div>
+                    <div className="stat-number text-success">{requestStats.total}</div>
                     <small>Total submitted</small>
                   </div>
                   <div className="stat-icon bg-success-subtle text-success">
@@ -42,7 +58,7 @@ export default function UserOverview({ onRequestService }) {
                 <div className="d-flex justify-content-between">
                   <div>
                     <small className="text-secondary">PENDING</small>
-                    <div className="stat-number text-warning">2</div>
+                    <div className="stat-number text-warning">{requestStats.pending}</div>
                     <small>Waiting for review</small>
                   </div>
                   <div className="stat-icon bg-warning-subtle text-warning">
@@ -59,7 +75,7 @@ export default function UserOverview({ onRequestService }) {
                 <div className="d-flex justify-content-between">
                   <div>
                     <small className="text-secondary">COMPLETED</small>
-                    <div className="stat-number text-primary">5</div>
+                    <div className="stat-number text-primary">{requestStats.completed}</div>
                     <small>Successfully processed</small>
                   </div>
                   <div className="stat-icon bg-primary-subtle text-primary">
@@ -76,7 +92,7 @@ export default function UserOverview({ onRequestService }) {
                 <div className="d-flex justify-content-between">
                   <div>
                     <small className="text-secondary">NOTIFICATIONS</small>
-                    <div className="stat-number text-danger">3</div>
+                    <div className="stat-number text-danger">—</div>
                     <small>Unread updates</small>
                   </div>
                   <div className="stat-icon bg-danger-subtle text-danger">
@@ -96,7 +112,7 @@ export default function UserOverview({ onRequestService }) {
           <div className="row g-3">
             
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-success-subtle text-success">
                   <i className="bi bi-file-earmark-check-fill"></i>
                 </div>
@@ -106,7 +122,7 @@ export default function UserOverview({ onRequestService }) {
             </div>
            
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-primary-subtle text-primary">
                   <i className="bi bi-person-vcard-fill"></i>
                 </div>
@@ -116,7 +132,7 @@ export default function UserOverview({ onRequestService }) {
             </div>
             {/* INDIGENCY */}
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-warning-subtle text-warning">
                   <i className="bi bi-file-earmark-person-fill"></i>
                 </div>
@@ -126,7 +142,7 @@ export default function UserOverview({ onRequestService }) {
             </div>
             {/* BUSINESS */}
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-danger-subtle text-danger">
                   <i className="bi bi-shop"></i>
                 </div>
@@ -136,7 +152,7 @@ export default function UserOverview({ onRequestService }) {
             </div>
             {/* CERTIFICATIONS */}
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-info-subtle text-info">
                   <i className="bi bi-file-text-fill"></i>
                 </div>
@@ -146,7 +162,7 @@ export default function UserOverview({ onRequestService }) {
             </div>
             {/* APPOINTMENT */}
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#schedule">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-success-subtle text-success">
                   <i className="bi bi-calendar-plus-fill"></i>
                 </div>
@@ -157,7 +173,7 @@ export default function UserOverview({ onRequestService }) {
             
             {/* MORE */}
             <div className="col-6 col-md-4 col-xl-3">
-              <a className="service-button" href="#">
+              <a className="service-button" href="/request-service" onClick={openServices}>
                 <div className="service-icon bg-secondary-subtle text-secondary">
                   <i className="bi bi-three-dots"></i>
                 </div>
@@ -180,7 +196,7 @@ export default function UserOverview({ onRequestService }) {
                 </h5>
                 <small className="text-secondary">Track the status of your submitted requests.</small>
               </div>
-              <button className="btn btn-outline-success btn-sm">View All</button>
+              <button className="btn btn-outline-success btn-sm" type="button" onClick={onViewRequests}>View All</button>
             </div>
             <div className="table-responsive">
               <table className="table align-middle">
