@@ -1,8 +1,11 @@
+
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function ManagerequestadminPage() {
-  const [requests, setRequests] = useState([]);
+  const navigate = useNavigate();
 
+  const [requests, setRequests] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
 
@@ -13,55 +16,95 @@ export default function ManagerequestadminPage() {
   const [editStatus, setEditStatus] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+ 
   useEffect(() => {
     fetch("https://os-system-ubjr.onrender.com/api/requests")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Failed to load requests");
+        }
+        return response.json();
+      })
       .then((data) => {
-        setRequests(data);
+        setRequests(Array.isArray(data) ? data : []);
       })
       .catch((error) => {
-        console.log("Error fetching requests:", error);
+        console.error("Error fetching requests:", error);
       });
   }, []);
 
+  
+  function openRequestDetails(request) {
+    const selectedRequest = {
+      ...request,
+      id: request.requestId ?? request.id,
+      requestId: request.requestId ?? request.id,
+      resident: request.fullName ?? request.resident ?? "",
+      date: request.dateRequested ?? request.date ?? "",
+      purpose: request.purpose ?? "",
+      contactNumber: request.contactNumber ?? "",
+      status: request.status ?? "Pending",
+      remarks: request.remarks ?? "",
+      appointmentDate: request.appointmentDate ?? "",
+      appointmentTime: request.appointmentTime ?? "",
+    };
+
+    localStorage.setItem(
+      "adminSelectedRequest",
+      JSON.stringify(selectedRequest)
+    );
+
+    navigate("/request-detail-admin");
+  }
+
+  
   const filteredRequests = requests.filter((request) => {
     const matchesSearch =
-      request.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.service?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      request.requestId?.toLowerCase().includes(searchTerm.toLowerCase());
+      request.fullName
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      request.service
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      String(request.requestId ?? request.id ?? "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase());
 
     const matchesStatus =
-      statusFilter === "All" || request.status === statusFilter;
+      statusFilter === "All" ||
+      request.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
+  // Open the existing Edit modal.
   function openEditModal(request) {
     setIsModalOpen(true);
-    setEditRequestId(request.requestId);
-    setEditService(request.service);
-    setEditFullName(request.fullName);
-    setEditDateRequested(request.dateRequested);
-    setEditStatus(request.status);
+    setEditRequestId(request.requestId ?? request.id);
+    setEditService(request.service ?? "");
+    setEditFullName(request.fullName ?? "");
+    setEditDateRequested(request.dateRequested ?? "");
+    setEditStatus(request.status ?? "Pending");
   }
 
+  // Save edits to the backend.
   async function handleUpdate(event) {
     event.preventDefault();
 
     try {
       const response = await fetch(
-       `https://os-system-ubjr.onrender.com/api/requests/${editRequestId}`,
+        `https://os-system-ubjr.onrender.com/api/requests/${editRequestId}`,
         {
           method: "PUT",
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             service: editService,
             fullName: editFullName,
             dateRequested: editDateRequested,
-            status: editStatus
-          })
+            status: editStatus,
+          }),
         }
       );
 
@@ -71,18 +114,24 @@ export default function ManagerequestadminPage() {
 
       const data = await response.json();
 
-      setRequests((prev) =>
-        prev.map((request) =>
-          request.requestId === editRequestId ? data : request
+      setRequests((previousRequests) =>
+        previousRequests.map((request) =>
+          String(request.requestId ?? request.id) ===
+          String(editRequestId)
+            ? data
+            : request
         )
       );
 
       setIsModalOpen(false);
+      alert("Request updated successfully!");
     } catch (error) {
-      console.log("Error updating request:", error);
+      console.error("Error updating request:", error);
+      alert("Unable to update the request. Please try again.");
     }
   }
 
+  // Delete only the selected request.
   async function handleDelete(requestId) {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this request?"
@@ -96,7 +145,7 @@ export default function ManagerequestadminPage() {
       const response = await fetch(
         `https://os-system-ubjr.onrender.com/api/requests/${requestId}`,
         {
-          method: "DELETE"
+          method: "DELETE",
         }
       );
 
@@ -104,13 +153,18 @@ export default function ManagerequestadminPage() {
         throw new Error("Failed to delete request");
       }
 
-      await response.json();
-
-      setRequests((prev) =>
-        prev.filter((request) => request.requestId !== requestId)
+      setRequests((previousRequests) =>
+        previousRequests.filter(
+          (request) =>
+            String(request.requestId ?? request.id) !==
+            String(requestId)
+        )
       );
+
+      alert("Request deleted successfully!");
     } catch (error) {
-      console.log("Error deleting request:", error);
+      console.error("Error deleting request:", error);
+      alert("Unable to delete the request. Please try again.");
     }
   }
 
@@ -125,16 +179,17 @@ export default function ManagerequestadminPage() {
         </div>
       </div>
 
-      {}
+      {/* SEARCH AND STATUS FILTER */}
       <div className="row g-3 mb-4">
-
         <div className="col-md-8">
           <input
             type="text"
             className="form-control"
             placeholder="Search requests..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(event) =>
+              setSearchTerm(event.target.value)
+            }
           />
         </div>
 
@@ -142,24 +197,26 @@ export default function ManagerequestadminPage() {
           <select
             className="form-select"
             value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
+            onChange={(event) =>
+              setStatusFilter(event.target.value)
+            }
           >
             <option value="All">All Status</option>
             <option value="Pending">Pending</option>
             <option value="Processing">Processing</option>
+            <option value="In Process">In Process</option>
             <option value="Completed">Completed</option>
             <option value="Rejected">Rejected</option>
+            <option value="Canceled">Canceled</option>
           </select>
         </div>
-
       </div>
 
-
+      {/* REQUESTS TABLE */}
       <div className="card shadow-sm border-0">
         <div className="card-body">
           <div className="table-responsive">
             <table className="table table-hover align-middle">
-
               <thead>
                 <tr>
                   <th>Request ID</th>
@@ -172,82 +229,112 @@ export default function ManagerequestadminPage() {
               </thead>
 
               <tbody>
-                {filteredRequests.map((request) => (
-                  <tr key={request.requestId}>
-                    <td>{request.requestId}</td>
-                    <td>{request.fullName}</td>
-                    <td>{request.service}</td>
-                    <td>{request.dateRequested}
-                    </td>
+                {filteredRequests.map((request) => {
+                  const requestId =
+                    request.requestId ?? request.id;
 
-                    <td>
-                      <span className="badge bg-secondary">
-                        {request.status}
-                      </span>
-                    </td>
+                  return (
+                    <tr key={requestId}>
+                      <td>{requestId}</td>
+                      <td>{request.fullName ?? request.resident ?? "N/A"}</td>
+                      <td>{request.service ?? "N/A"}</td>
+                      <td>
+                        {request.dateRequested ??
+                          request.date ??
+                          "N/A"}
+                      </td>
 
-                    <td>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-primary me-2"
-                        onClick={() => openEditModal(request)}
-                      >
-                        Edit
-                      </button>
+                      <td>
+                        <span className="badge bg-secondary">
+                          {request.status ?? "Pending"}
+                        </span>
+                      </td>
 
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => handleDelete(request.requestId)}
-                      >
-                        Delete
-                      </button>
-                    </td>
+                      <td>
+                        {/* NEW: VIEW DETAILS BUTTON */}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-success me-2"
+                          onClick={() =>
+                            openRequestDetails(request)
+                          }
+                        >
+                          View Details
+                        </button>
 
-                  </tr>
+                        {/* EXISTING EDIT BUTTON */}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-primary me-2"
+                          onClick={() => openEditModal(request)}
+                        >
+                          Edit
+                        </button>
 
-                ))}
-
+                        {/* EXISTING DELETE BUTTON */}
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() =>
+                            handleDelete(requestId)
+                          }
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
 
                 {filteredRequests.length === 0 && (
                   <tr>
-                    <td colSpan="6" className="text-center py-4">
+                    <td
+                      colSpan="6"
+                      className="text-center py-4"
+                    >
                       No requests found.
                     </td>
                   </tr>
                 )}
-
               </tbody>
-
             </table>
-
           </div>
-
         </div>
-
       </div>
 
+      {/* EDIT REQUEST MODAL */}
       {isModalOpen && (
-        <div className="modal show d-block" tabIndex="-1" role="dialog">
-          <div className="modal-dialog modal-dialog-centered" role="document">
+        <div
+          className="modal show d-block"
+          tabIndex="-1"
+          role="dialog"
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            role="document"
+          >
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Edit Request</h5>
+
                 <button
                   type="button"
                   className="btn-close"
                   aria-label="Close"
                   onClick={() => setIsModalOpen(false)}
-                ></button>
+                />
               </div>
 
               <form onSubmit={handleUpdate}>
                 <div className="modal-body">
-
                   <div className="mb-3">
-                    <label htmlFor="editRequestId" className="form-label">
+                    <label
+                      htmlFor="editRequestId"
+                      className="form-label"
+                    >
                       Request ID
                     </label>
+
                     <input
                       type="text"
                       className="form-control"
@@ -258,65 +345,90 @@ export default function ManagerequestadminPage() {
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="editFullName" className="form-label">
+                    <label
+                      htmlFor="editFullName"
+                      className="form-label"
+                    >
                       Resident
                     </label>
+
                     <input
                       type="text"
                       className="form-control"
                       id="editFullName"
                       value={editFullName}
-                      onChange={(e) => setEditFullName(e.target.value)}
+                      onChange={(event) =>
+                        setEditFullName(event.target.value)
+                      }
                       required
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="editService" className="form-label">
+                    <label
+                      htmlFor="editService"
+                      className="form-label"
+                    >
                       Service
                     </label>
+
                     <input
                       type="text"
                       className="form-control"
                       id="editService"
                       value={editService}
-                      onChange={(e) => setEditService(e.target.value)}
+                      onChange={(event) =>
+                        setEditService(event.target.value)
+                      }
                       required
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="editDateRequested" className="form-label">
+                    <label
+                      htmlFor="editDateRequested"
+                      className="form-label"
+                    >
                       Date Requested
                     </label>
+
                     <input
                       type="text"
                       className="form-control"
                       id="editDateRequested"
                       value={editDateRequested}
-                      onChange={(e) => setEditDateRequested(e.target.value)}
+                      onChange={(event) =>
+                        setEditDateRequested(event.target.value)
+                      }
                       required
                     />
                   </div>
 
                   <div className="mb-3">
-                    <label htmlFor="editStatus" className="form-label">
+                    <label
+                      htmlFor="editStatus"
+                      className="form-label"
+                    >
                       Status
                     </label>
+
                     <select
                       className="form-select"
                       id="editStatus"
                       value={editStatus}
-                      onChange={(e) => setEditStatus(e.target.value)}
+                      onChange={(event) =>
+                        setEditStatus(event.target.value)
+                      }
                       required
                     >
                       <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
                       <option value="In Process">In Process</option>
                       <option value="Completed">Completed</option>
+                      <option value="Rejected">Rejected</option>
                       <option value="Canceled">Canceled</option>
                     </select>
                   </div>
-
                 </div>
 
                 <div className="modal-footer">
@@ -328,17 +440,18 @@ export default function ManagerequestadminPage() {
                     Cancel
                   </button>
 
-                  <button type="submit" className="btn btn-primary">
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                  >
                     Save Changes
                   </button>
                 </div>
               </form>
-
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }
