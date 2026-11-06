@@ -1,163 +1,206 @@
+
 const express = require("express");
 const cors = require("cors");
-const PORT = process.env.PORT || 8080
+const mysql = require("mysql2/promise");
+
+const PORT = process.env.PORT || 8080;
 
 const app = express();
+
+const db = mysql.createPool({
+    host: "localhost",
+    user: "root",
+    password: "",
+    database: "barangay_os_db"
+});
 
 app.use(express.json());
 app.use(cors());
 
-
-
-let requests = [
-
-  {
-    requestId: "BRG-1020",
-    service: "Certificate of Residency",
-    fullName: "Juan Dela Cruz",
-    dateRequested: "April 28, 2026",
-    status: "Completed"
-  },
-
-  {
-    requestId: "BRG-1017",
-    service: "Certificate of Indigency",
-    fullName: "Maria Santos",
-    dateRequested: "April 25, 2026",
-    status: "In Process"
-  },
-
-  {
-    requestId: "BRG-1015",
-    service: "Business Clearance",
-    fullName: "Pedro Reyes",
-    dateRequested: "April 22, 2026",
-    status: "Pending"
-  }
-
-];
-
 let residents = [
-{
-  id: "1001",
-  number: "50"
-
-} 
+    {
+        id: "1001",
+        number: "50"
+    }
 ];
-
-
-app.get("/api/requests", (req, res) => {
-
-  res.json(requests);
-
-});
 
 app.get("/api/residents", (req, res) => {
-
-  res.json(residents);
-
+    res.json(residents);
 });
 
-
-app.post("/api/requests", (req, res) => {
-
-  const requestNumber = requests
-    .map((request) => {
-      const match = request.requestId?.match(/^REQ-\d+-(\d+)$/);
-      return match ? Number(match[1]) : 0;
+// CHECK DATABASE CONNECTION
+db.getConnection()
+    .then(connection => {
+        console.log("Database Connected");
+        connection.release();
     })
-    .reduce((highest, number) => Math.max(highest, number), 0) + 1;
+    .catch(error => {
+        console.log("Database Connection Failed:", error);
+    });
 
-  const newRequest = {
-    requestId: `REQ-${new Date().getFullYear()}-${String(requestNumber).padStart(3, "0")}`,
-    service: req.body.service,
-    fullName: req.body.fullName,
-    address: req.body.address,
-    purpose: req.body.purpose,
-    contactNumber: req.body.contactNumber,
-    appointmentDate: req.body.appointmentDate,
-    appointmentTime: req.body.appointmentTime,
-    dateRequested: new Date().toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-      year: "numeric"
-    }),
-    status: "Pending"
-  };
+// SELECT - GET ALL REQUESTS
+app.get("/api/requests", async (req, res) => {
+    try {
+        const [requests] = await db.query(
+            `SELECT
+                request_id AS id,
+                request_code AS requestId,
+                service,
+                full_name AS fullName,
+                address,
+                purpose,
+                contact_number AS contactNumber,
+                appointment_date AS appointmentDate,
+                appointment_time AS appointmentTime,
+                date_requested AS dateRequested,
+                status,
+                remarks
+             FROM service_requests`
+        );
 
-  requests.push(newRequest);
+        res.json(requests);
 
-  console.log("=================================");
-  console.log("REQUEST SUBMITTED");
-  console.log("=================================");
-  console.log(newRequest);
-  console.log("=================================");
-
-  res.status(201).json(newRequest);
-
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
+// INSERT - ADD NEW REQUEST
+app.post("/api/requests", async (req, res) => {
+    try {
+        const {
+            service,
+            fullName,
+            address,
+            purpose,
+            contactNumber,
+            appointmentDate,
+            appointmentTime
+        } = req.body;
 
-app.put("/api/requests/:requestId", (req, res) => {
+        const date = new Date();
+        const dateRequested =
+            `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
-  const { requestId } = req.params;
+        const requestCode =
+            `REQ-${date.getFullYear()}-${Date.now()}`;
 
-  const requestIndex = requests.findIndex(
-    (request) => request.requestId === requestId
-  );
+        const [result] = await db.query(
+            `INSERT INTO service_requests
+            (request_code, service, full_name, address, purpose,
+            contact_number, appointment_date, appointment_time,
+            date_requested, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                requestCode,
+                service,
+                fullName,
+                address,
+                purpose,
+                contactNumber,
+                appointmentDate || null,
+                appointmentTime || null,
+                dateRequested,
+                "Pending"
+            ]
+        );
 
-  if (requestIndex === -1) {
-    return res.status(404).json({ message: "Request not found" });
-  }
+        const [newRequest] = await db.query(
+            `SELECT
+                request_id AS id,
+                request_code AS requestId,
+                service,
+                full_name AS fullName,
+                address,
+                purpose,
+                contact_number AS contactNumber,
+                appointment_date AS appointmentDate,
+                appointment_time AS appointmentTime,
+                date_requested AS dateRequested,
+                status
+             FROM service_requests
+             WHERE request_id = ?`,
+            [result.insertId]
+        );
 
-  requests[requestIndex] = {
-    requestId: requestId,
-    service: req.body.service,
-    fullName: req.body.fullName,
-    dateRequested: req.body.dateRequested,
-    status: req.body.status
-  };
+        console.log("REQUEST SUBMITTED");
+        console.log(newRequest[0]);
 
-  console.log("=================================");
-  console.log("REQUEST UPDATED");
-  console.log("=================================");
-  console.log(requests[requestIndex]);
-  console.log("=================================");
+        res.status(201).json(newRequest[0]);
 
-  res.json(requests[requestIndex]);
-
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
+// UPDATE - EDIT REQUEST
+app.put("/api/requests/:requestId", async (req, res) => {
+    try {
+        const { requestId } = req.params;
+        const { service, fullName, status } = req.body;
 
-app.delete("/api/requests/:requestId", (req, res) => {
+        const [result] = await db.query(
+            `UPDATE service_requests
+             SET service = ?, full_name = ?, status = ?
+             WHERE request_code = ?`,
+            [service, fullName, status, requestId]
+        );
 
-  const { requestId } = req.params;
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                message: "Request not found"
+            });
+        }
 
-  const requestIndex = requests.findIndex(
-    (request) => request.requestId === requestId
-  );
+        const [updatedRequest] = await db.query(
+            `SELECT
+                request_id AS id,
+                request_code AS requestId,
+                service,
+                full_name AS fullName,
+                date_requested AS dateRequested,
+                status
+             FROM service_requests
+             WHERE request_code = ?`,
+            [requestId]
+        );
 
-  if (requestIndex === -1) {
-    return res.status(404).json({ message: "Request not found" });
-  }
+        console.log("REQUEST UPDATED");
+        console.log(updatedRequest[0]);
 
-  const deletedRequest = requests.splice(requestIndex, 1)[0];
+        res.json(updatedRequest[0]);
 
-  console.log("=================================");
-  console.log("REQUEST DELETED");
-  console.log("=================================");
-  console.log(deletedRequest);
-  console.log("CURRENT REQUESTS:");
-  console.log(requests);
-  console.log("=================================");
-
-  res.json(deletedRequest);
-
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
+// DELETE - REMOVE REQUEST
+app.delete("/api/requests/:requestId", async (req, res) => {
+    try {
+        const { requestId } = req.params;
 
-app.listen(8080, () => {
+        const [result] = await db.query(
+            "DELETE FROM service_requests WHERE request_code = ?",
+            [requestId]
+        );
 
-  console.log("Server running on https://os-system-ubjr.onrender.com");
+        if (result.affectedRows === 0) {
+            return res.status(404).json({
+                message: "Request not found"
+            });
+        }
 
+        console.log("REQUEST DELETED");
+        console.log(requestId);
+
+        res.json({ message: "Request deleted successfully" });
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });

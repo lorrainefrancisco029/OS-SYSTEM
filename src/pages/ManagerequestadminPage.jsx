@@ -18,7 +18,7 @@ export default function ManagerequestadminPage({ onViewRequest }) {
 
   // Load requests from the backend.
   useEffect(() => {
-    fetch("https://os-system-ubjr.onrender.com/api/requests")
+    fetch("http://localhost:8080/api/requests")
       .then((response) => {
         if (!response.ok) {
           throw new Error("Failed to load requests");
@@ -99,7 +99,7 @@ export default function ManagerequestadminPage({ onViewRequest }) {
 
     try {
       const response = await fetch(
-        `https://os-system-ubjr.onrender.com/api/requests/${editRequestId}`,
+        `http://localhost:8080/api/requests/${editRequestId}`,
         {
           method: "PUT",
           headers: {
@@ -147,7 +147,7 @@ export default function ManagerequestadminPage({ onViewRequest }) {
 
     try {
       const response = await fetch(
-        `https://os-system-ubjr.onrender.com/api/requests/${requestId}`,
+        `http://localhost:8080/api/requests/${requestId}`,
         {
           method: "DELETE",
         }

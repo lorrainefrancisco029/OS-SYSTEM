@@ -5,7 +5,7 @@ export default function MyrequestPage({ onBack }) {
   const [allRequests, setAllRequests] = useState([]);
 
   useEffect(() => {
-    fetch("https://os-system-ubjr.onrender.com/api/requests")
+    fetch("http://localhost:8080/api/requests")
       .then((response) => response.json())
       .then((data) => {
         setAllRequests(data);
