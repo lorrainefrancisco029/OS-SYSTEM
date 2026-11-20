@@ -46,7 +46,7 @@ function AnnouncementsContent() {
         <div className="d-flex gap-3">
           <i className="bi bi-alarm-fill text-danger fs-4"></i>
           <div>
-            <h6 className="fw-bold mb-1">Business Clearance Renewal</h6>
+            <h6 className="fw-bold mb-1">Business Clearance Renewals</h6>
             <p className="small text-secondary mb-1">Business owners are reminded to renew their clearance.</p>
             <small className="text-secondary">April 20, 2026</small>
           </div>
