@@ -202,5 +202,5 @@ app.delete("/api/requests/:requestId", async (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log("Server running on https://os-system-ubjr.onrender.com");
 });
