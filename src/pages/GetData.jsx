@@ -5,7 +5,7 @@ export default function GetData() {
   const [requests, setRequests] = useState([]);
 
   useEffect(() => {
-    fetch("http://localhost:8080/api/requests")
+    fetch("https://os-system-ubjr.onrender.com/api/requests")
       .then((response) => response.json())
       .then((data) => {
         setRequests(data);

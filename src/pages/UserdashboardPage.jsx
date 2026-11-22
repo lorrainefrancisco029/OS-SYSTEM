@@ -1,8 +1,11 @@
-import React, { useState } from "react";
+
+import React, { useEffect, useState } from "react";
 import DashboardLayout from "../components/DashboardLayout";
 import UserOverview from "./UserOverview";
 import MyrequestPage from "./MyrequestPage";
 import RequestservicePage from "./RequestservicePage";
+
+const API_BASE_URL = "https://os-system-ubjr.onrender.com";
 
 function SimpleContent({ title, description, children }) {
   return (
@@ -16,71 +19,283 @@ function SimpleContent({ title, description, children }) {
   );
 }
 
+// REQUEST DETAILS
+function RequestDetailsContent({ request, onBack }) {
+  const formatDate = (date) => {
+    if (!date) return "Not provided";
+
+    return new Date(
+      `${String(date).slice(0, 10)}T00:00:00`
+    ).toLocaleDateString();
+  };
+
+  if (!request) {
+    return (
+      <SimpleContent
+        title="Request Details"
+        description="The selected request could not be found."
+      >
+        <button className="btn btn-outline-success" onClick={onBack}>
+          <i className="bi bi-arrow-left me-2"></i>
+          Back
+        </button>
+      </SimpleContent>
+    );
+  }
+
+  return (
+    <SimpleContent
+      title="Request Details"
+      description="View the information and current status of your service request."
+    >
+      <div className="card border-0 bg-light mb-4">
+        <div className="card-body p-4">
+          <div className="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+              <small className="text-secondary">REQUEST ID</small>
+              <h5 className="fw-bold text-success mb-0">
+                #{request.requestId || request.id}
+              </h5>
+            </div>
+
+            <span
+              className={`badge rounded-pill px-3 py-2 ${
+                String(request.status || "Pending").toLowerCase() === "completed"
+                  ? "bg-success-subtle text-success"
+                  : String(request.status || "Pending").toLowerCase() === "pending"
+                  ? "bg-warning-subtle text-warning"
+                  : "bg-info-subtle text-info"
+              }`}
+            >
+              {request.status || "Pending"}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <h5 className="fw-bold mb-3">Resident Information</h5>
+
+      <div className="row g-3 mb-4">
+        <div className="col-md-6">
+          <small className="text-secondary">Full Name</small>
+          <p className="fw-semibold">{request.fullName || "Not provided"}</p>
+        </div>
+
+        <div className="col-md-6">
+          <small className="text-secondary">Address</small>
+          <p className="fw-semibold">{request.address || "Not provided"}</p>
+        </div>
+
+        <div className="col-md-6">
+          <small className="text-secondary">Contact Number</small>
+          <p className="fw-semibold">{request.contactNumber || "Not provided"}</p>
+        </div>
+      </div>
+
+      <hr />
+
+      <h5 className="fw-bold mb-3">Service Information</h5>
+
+      <div className="row g-3 mb-4">
+        <div className="col-md-6">
+          <small className="text-secondary">Service Requested</small>
+          <p className="fw-semibold">{request.service || "Not provided"}</p>
+        </div>
+
+        <div className="col-md-6">
+          <small className="text-secondary">Date Requested</small>
+          <p className="fw-semibold">{formatDate(request.dateRequested)}</p>
+        </div>
+
+        <div className="col-md-6">
+          <small className="text-secondary">Appointment Date</small>
+          <p className="fw-semibold">{formatDate(request.appointmentDate)}</p>
+        </div>
+
+        <div className="col-md-6">
+          <small className="text-secondary">Appointment Time</small>
+          <p className="fw-semibold">{request.appointmentTime || "Not provided"}</p>
+        </div>
+
+        <div className="col-12">
+          <small className="text-secondary">Purpose</small>
+          <p className="fw-semibold">{request.purpose || "Not provided"}</p>
+        </div>
+      </div>
+
+      <hr />
+
+      <h5 className="fw-bold mb-3">Admin Remarks</h5>
+
+      <div className="p-3 rounded bg-light mb-4">
+        <p className="mb-0">
+          {request.remarks || "No remarks from the administrator yet."}
+        </p>
+      </div>
+
+      <button
+        className="btn btn-outline-success"
+        type="button"
+        onClick={onBack}
+      >
+        <i className="bi bi-arrow-left me-2"></i>
+        Back to Dashboard
+      </button>
+    </SimpleContent>
+  );
+}
+
+// ANNOUNCEMENTS FROM DATABASE
 function AnnouncementsContent() {
+  const [announcements, setAnnouncements] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadAnnouncements = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/announcements`
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load announcements.");
+        }
+
+        const data = await response.json();
+
+        if (!cancelled) {
+          setAnnouncements(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Error loading announcements:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadAnnouncements();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <SimpleContent
       title="Announcements"
       description="Important information and updates from your Barangay."
     >
-      <div className="announcement mb-3">
-        <div className="d-flex gap-3">
-          <i className="bi bi-bell-fill text-warning fs-4"></i>
-          <div>
-            <h6 className="fw-bold mb-1">Change in Office Hours</h6>
-            <p className="small text-secondary mb-1">Office hours will be from 8:00 AM to 5:00 PM.</p>
-            <small className="text-secondary">April 28, 2026</small>
+      {loading ? (
+        <p className="text-secondary">Loading announcements...</p>
+      ) : announcements.length === 0 ? (
+        <p className="text-secondary">No announcements available.</p>
+      ) : (
+        announcements.map((item, index) => (
+          <div
+            className={`announcement ${
+              index === announcements.length - 1 ? "mb-0" : "mb-3"
+            }`}
+            key={item.id || index}
+          >
+            <div className="d-flex gap-3">
+              <i className="bi bi-bell-fill text-warning fs-4"></i>
+
+              <div>
+                <h6 className="fw-bold mb-1">{item.title}</h6>
+
+                <p className="small text-secondary mb-1">
+                  {item.description || item.message}
+                </p>
+
+                <small className="text-secondary">
+                  {item.date || item.published_date || ""}
+                </small>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
-      <div className="announcement mb-3">
-        <div className="d-flex gap-3">
-          <i className="bi bi-calendar-check-fill text-success fs-4"></i>
-          <div>
-            <h6 className="fw-bold mb-1">Community Clean-Up Drive</h6>
-            <p className="small text-secondary mb-1">Join the community clean-up drive on May 12, 2026.</p>
-            <small className="text-secondary">April 25, 2026</small>
-          </div>
-        </div>
-      </div>
-      <div className="announcement mb-0">
-        <div className="d-flex gap-3">
-          <i className="bi bi-alarm-fill text-danger fs-4"></i>
-          <div>
-            <h6 className="fw-bold mb-1">Business Clearance Renewals</h6>
-            <p className="small text-secondary mb-1">Business owners are reminded to renew their clearance.</p>
-            <small className="text-secondary">April 20, 2026</small>
-          </div>
-        </div>
-      </div>
+        ))
+      )}
     </SimpleContent>
   );
 }
 
+// SCHEDULE FROM DATABASE
 function ScheduleContent() {
+  const [schedules, setSchedules] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSchedules = async () => {
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/api/schedules`
+        );
+
+        if (!response.ok) {
+          throw new Error("Unable to load schedules.");
+        }
+
+        const data = await response.json();
+
+        if (!cancelled) {
+          setSchedules(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error("Error loading schedules:", error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadSchedules();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <SimpleContent
       title="Schedule"
       description="Barangay activities and upcoming events."
     >
-      <div className="schedule-item mb-4">
-        <div className="schedule-time">May 5, 2026</div>
-        <div className="fw-semibold">Barangay Assembly</div>
-        <small className="text-secondary">9:00 AM • Barangay Hall</small>
-      </div>
-      <div className="schedule-item mb-4">
-        <div className="schedule-time">May 12, 2026</div>
-        <div className="fw-semibold">Community Clean-Up Drive</div>
-        <small className="text-secondary">7:00 AM • Barangay Grounds</small>
-      </div>
-      <div className="schedule-item mb-0">
-        <div className="schedule-time">May 20, 2026</div>
-        <div className="fw-semibold">Health and Wellness Program</div>
-        <small className="text-secondary">8:00 AM • Barangay Hall</small>
-      </div>
+      {loading ? (
+        <p className="text-secondary">Loading schedules...</p>
+      ) : schedules.length === 0 ? (
+        <p className="text-secondary">
+          No upcoming schedules available.
+        </p>
+      ) : (
+        schedules.map((item, index) => (
+          <div
+            className={`schedule-item ${
+              index === schedules.length - 1 ? "mb-0" : "mb-4"
+            }`}
+            key={item.id || index}
+          >
+            <div className="schedule-time">
+              {item.time || item.activity_time}
+            </div>
+
+            <div className="fw-semibold">
+              {item.title || item.activity}
+            </div>
+
+            <small className="text-secondary">
+              {item.location || "Location not specified"}
+            </small>
+          </div>
+        ))
+      )}
     </SimpleContent>
   );
 }
 
+// PROFILE
 function ProfileContent() {
   return (
     <SimpleContent
@@ -90,13 +305,23 @@ function ProfileContent() {
       <div className="profile-box">
         <div className="card-body p-4">
           <div className="d-flex align-items-center gap-3 flex-wrap">
-            <div className="avatar bg-warning text-dark" style={{ width: "65px", height: "65px", fontSize: "20px" }}>
+            <div
+              className="avatar bg-warning text-dark"
+              style={{
+                width: "65px",
+                height: "65px",
+                fontSize: "20px"
+              }}
+            >
               EF
             </div>
+
             <div>
               <h5 className="fw-bold mb-1">Eliz Francisco</h5>
               <p className="mb-1 opacity-75">Barangay Resident</p>
-              <small className="opacity-75">Zone 3 • Account Active</small>
+              <small className="opacity-75">
+                Zone 3 • Account Active
+              </small>
             </div>
           </div>
         </div>
@@ -105,13 +330,33 @@ function ProfileContent() {
   );
 }
 
+// RESIDENT DASHBOARD
 export default function UserdashboardPage() {
   const [activePage, setActivePage] = useState("overview");
+  const [selectedRequest, setSelectedRequest] = useState(null);
+
+  const openRequestDetails = (request) => {
+    setSelectedRequest(request);
+    setActivePage("request-details");
+  };
 
   const renderContent = () => {
     switch (activePage) {
       case "requests":
-        return <MyrequestPage onBack={() => setActivePage("overview")} />;
+        return (
+          <MyrequestPage
+            onBack={() => setActivePage("overview")}
+          />
+        );
+
+      case "request-details":
+        return (
+          <RequestDetailsContent
+            request={selectedRequest}
+            onBack={() => setActivePage("overview")}
+          />
+        );
+
       case "services":
         return (
           <RequestservicePage
@@ -119,15 +364,25 @@ export default function UserdashboardPage() {
             onSubmitted={() => setActivePage("requests")}
           />
         );
+
       case "announcements":
         return <AnnouncementsContent />;
+
       case "schedule":
         return <ScheduleContent />;
+
       case "profile":
         return <ProfileContent />;
+
       case "overview":
       default:
-        return <UserOverview onRequestService={() => setActivePage("services")} />;
+        return (
+          <UserOverview
+            onRequestService={() => setActivePage("services")}
+            onViewRequests={() => setActivePage("requests")}
+            onViewRequest={openRequestDetails}
+          />
+        );
     }
   };
 

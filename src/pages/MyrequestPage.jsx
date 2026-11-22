@@ -1,8 +1,10 @@
+
 import React, { useEffect, useState } from "react";
 
 export default function MyrequestPage({ onBack }) {
   const [currentFilter, setCurrentFilter] = useState("All");
   const [allRequests, setAllRequests] = useState([]);
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   useEffect(() => {
     fetch("https://os-system-ubjr.onrender.com/api/requests")
@@ -21,12 +23,11 @@ export default function MyrequestPage({ onBack }) {
       : allRequests.filter((request) => request.status === currentFilter);
 
   const viewRequest = (requestId) => {
-    const request = allRequests.find((r) => r.requestId === requestId);
-    if (!request) return;
-
-    alert(
-      `Request ID: ${request.requestId}\nService: ${request.service}\nName: ${request.fullName}\nDate Requested: ${request.dateRequested}\nAppointment: ${request.appointmentDate || ""} ${request.appointmentTime || ""}\nStatus: ${request.status}`
+    const request = allRequests.find(
+      (r) => r.requestId === requestId
     );
+
+    setSelectedRequest(request || null);
   };
 
   return (
@@ -43,11 +44,40 @@ export default function MyrequestPage({ onBack }) {
         <h3 className="fw-bold mb-4">My Requests</h3>
 
         <div className="mb-3">
-          <button className={`btn filter-btn ${currentFilter === "All" ? "active" : ""}`} onClick={() => setCurrentFilter("All")}>All</button>
-          <button className={`btn filter-btn ${currentFilter === "Pending" ? "active" : ""}`} onClick={() => setCurrentFilter("Pending")}>Pending</button>
-          <button className={`btn filter-btn ${currentFilter === "In Process" ? "active" : ""}`} onClick={() => setCurrentFilter("In Process")}>In Process</button>
-          <button className={`btn filter-btn ${currentFilter === "Completed" ? "active" : ""}`} onClick={() => setCurrentFilter("Completed")}>Completed</button>
-          <button className={`btn filter-btn ${currentFilter === "Canceled" ? "active" : ""}`} onClick={() => setCurrentFilter("Canceled")}>Canceled</button>
+          <button
+            className={`btn filter-btn ${currentFilter === "All" ? "active" : ""}`}
+            onClick={() => setCurrentFilter("All")}
+          >
+            All
+          </button>
+
+          <button
+            className={`btn filter-btn ${currentFilter === "Pending" ? "active" : ""}`}
+            onClick={() => setCurrentFilter("Pending")}
+          >
+            Pending
+          </button>
+
+          <button
+            className={`btn filter-btn ${currentFilter === "In Process" ? "active" : ""}`}
+            onClick={() => setCurrentFilter("In Process")}
+          >
+            In Process
+          </button>
+
+          <button
+            className={`btn filter-btn ${currentFilter === "Completed" ? "active" : ""}`}
+            onClick={() => setCurrentFilter("Completed")}
+          >
+            Completed
+          </button>
+
+          <button
+            className={`btn filter-btn ${currentFilter === "Canceled" ? "active" : ""}`}
+            onClick={() => setCurrentFilter("Canceled")}
+          >
+            Canceled
+          </button>
         </div>
 
         <div className="requests-card overflow-hidden">
@@ -62,6 +92,7 @@ export default function MyrequestPage({ onBack }) {
                   <th>Action</th>
                 </tr>
               </thead>
+
               <tbody id="requestTable">
                 {filteredRequests.map((request) => {
                   const statusClass =
@@ -75,11 +106,15 @@ export default function MyrequestPage({ onBack }) {
 
                   return (
                     <tr key={request.requestId}>
-                      <td className="px-3 fw-semibold">{request.requestId}</td>
+                      <td className="px-3 fw-semibold">
+                        {request.requestId}
+                      </td>
                       <td>{request.service}</td>
                       <td>{request.dateRequested}</td>
                       <td>
-                        <span className={`status ${statusClass}`}>{request.status}</span>
+                        <span className={`status ${statusClass}`}>
+                          {request.status}
+                        </span>
                       </td>
                       <td>
                         <button
@@ -104,9 +139,101 @@ export default function MyrequestPage({ onBack }) {
           )}
         </div>
 
+        {/* REQUEST DETAILS MODAL */}
+        {selectedRequest && (
+          <div
+            className="modal d-block"
+            tabIndex="-1"
+            style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          >
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title fw-bold">
+                    Request Details
+                  </h5>
+
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setSelectedRequest(null)}
+                  ></button>
+                </div>
+
+                <div className="modal-body">
+                  <p>
+                    <strong>Request ID:</strong>{" "}
+                    {selectedRequest.requestId}
+                  </p>
+
+                  <p>
+                    <strong>Service:</strong>{" "}
+                    {selectedRequest.service}
+                  </p>
+
+                  <p>
+                    <strong>Status:</strong>{" "}
+                    {selectedRequest.status}
+                  </p>
+
+                  <p>
+                    <strong>Appointment Date:</strong>{" "}
+                    {selectedRequest.appointmentDate || "Not scheduled"}
+                  </p>
+
+                  <p>
+                    <strong>Appointment Time:</strong>{" "}
+                    {selectedRequest.appointmentTime || "Not scheduled"}
+                  </p>
+
+                  <hr />
+
+                  <h6 className="fw-bold">Message from Barangay</h6>
+
+                  <p className="mb-0">
+                    {selectedRequest.remarks ||
+                      "No message from the barangay yet."}
+                  </p>
+                </div>
+
+                <div className="modal-footer">
+                  <button
+                    className="btn btn-dark"
+                    type="button"
+                    onClick={() => setSelectedRequest(null)}
+                  >
+                    CLOSE
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="d-flex justify-content-between mt-4">
-          <button className="btn btn-outline-secondary" type="button" onClick={() => onBack ? onBack() : (window.location.href = "/user-dashboard")}>BACK</button>
-          <button className="btn btn-dark px-4" type="button" onClick={() => onBack ? onBack() : (window.location.href = "/user-dashboard")}>DONE</button>
+          <button
+            className="btn btn-outline-secondary"
+            type="button"
+            onClick={() =>
+              onBack
+                ? onBack()
+                : (window.location.href = "/user-dashboard")
+            }
+          >
+            BACK
+          </button>
+
+          <button
+            className="btn btn-dark px-4"
+            type="button"
+            onClick={() =>
+              onBack
+                ? onBack()
+                : (window.location.href = "/user-dashboard")
+            }
+          >
+            DONE
+          </button>
         </div>
       </div>
     </>

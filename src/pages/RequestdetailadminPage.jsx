@@ -32,60 +32,52 @@ export default function RequestdetailadminPage({ onBack }) {
 
   const requestId = request?.requestId ?? request?.id;
 
-  const updateStatus = () => {
+  
+const updateStatus = async () => {
     if (!request) {
-      setMessage("No request was selected. Please return to Manage Requests.");
-      setMessageType("danger");
-      return;
+        setMessage("No request was selected.");
+        setMessageType("danger");
+        return;
     }
-
-    // Update only the selected request's details.
-    const updatedRequest = {
-      ...request,
-      status,
-      remarks,
-      appointmentDate,
-      appointmentTime,
-    };
 
     try {
-      // Save the selected request for this browser.
-      localStorage.setItem(
-        "adminSelectedRequest",
-        JSON.stringify(updatedRequest)
-      );
+        const response = await fetch(
+            `https://os-system-ubjr.onrender.com/api/requests/${encodeURIComponent(requestId)}`,
+            {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    status,
+                    remarks,
+                    appointmentDate,
+                    appointmentTime
+                })
+            }
+        );
 
-      // Update the locally stored request list, if available.
-      const savedRequests = localStorage.getItem("osSystemRequests");
+        const data = await response.json();
 
-      if (savedRequests) {
-        const requests = JSON.parse(savedRequests);
-
-        if (Array.isArray(requests)) {
-          const updatedRequests = requests.map((item) => {
-            const itemId = item.requestId ?? item.id;
-
-            return String(itemId) === String(requestId)
-              ? { ...item, ...updatedRequest }
-              : item;
-          });
-
-          localStorage.setItem(
-            "osSystemRequests",
-            JSON.stringify(updatedRequests)
-          );
+        if (!response.ok) {
+            throw new Error(data.message || "Unable to update request.");
         }
-      }
 
-      setRequest(updatedRequest);
-      setMessage("Request details saved in this browser.");
-      setMessageType("success");
+        localStorage.setItem(
+            "adminSelectedRequest",
+            JSON.stringify(data)
+        );
+
+        setRequest(data);
+        setMessage("Request status and details updated successfully.");
+        setMessageType("success");
+
     } catch (error) {
-      console.error("Unable to save request details:", error);
-      setMessage("Unable to save changes in this browser.");
-      setMessageType("danger");
+        setMessage(error.message || "Unable to update request.");
+        setMessageType("danger");
     }
-  };
+};
+
 
   const goBack = () => {
     if (onBack) {

@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { onAuthStateChanged } from "firebase/auth";
@@ -27,9 +28,11 @@ function RouteBodyClass() {
   const location = useLocation();
 
   useEffect(() => {
-    document.body.className = `route-${location.pathname
+    const pageName = location.pathname
       .replace(/^\//, "")
-      .replace(/[^a-z0-9]+/gi, "-") || "home"}`;
+      .replace(/[^a-z0-9]+/gi, "-") || "home";
+
+    document.body.className = `route-${pageName}`;
 
     return () => {
       document.body.className = "";
@@ -123,7 +126,6 @@ export default function App() {
           }
         />
 
-        
         <Route
           path="/login"
           element={
@@ -139,7 +141,6 @@ export default function App() {
           }
         />
 
-       
         <Route
           path="/admin-dashboard"
           element={
@@ -151,7 +152,6 @@ export default function App() {
           }
         />
 
-       
         <Route
           path="/user-dashboard"
           element={
@@ -163,31 +163,31 @@ export default function App() {
           }
         />
 
-       
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/request-service" element={<RequestservicePage />} />
         <Route path="/service-form" element={<ServiceformPage />} />
         <Route path="/my-request" element={<MyrequestPage />} />
+
         <Route
           path="/manage-request-admin"
           element={<ManagerequestadminPage />}
         />
+
         <Route
           path="/manage-service-admin"
           element={<ManageserviceadminPage />}
         />
+
         <Route
           path="/request-detail-admin"
           element={<RequestdetailadminPage />}
         />
+
         <Route path="/offline" element={<OfflinePage />} />
         <Route path="/get-data" element={<GetData />} />
 
-        
         <Route path="*" element={<IndexPage />} />
-
       </Routes>
     </BrowserRouter>
   );
 }
-
